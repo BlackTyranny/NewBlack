@@ -295,6 +295,8 @@
 	if(air_group || (height==0)) return 1
 	if(istype(mover,/obj/item/projectile))
 		return (check_cover(mover,target))
+	if(locate(/obj/structure/table, mover.loc))
+		return 1
 	if(istype(mover) && mover.checkpass(PASSTABLE))
 		return 1
 	if (flipped)
@@ -303,7 +305,12 @@
 		else
 			return 1
 	return 0
-
+/*
+/obj/structure/table/Bump()
+	if(locate(/obj/structure/table, usr.loc))
+		return 0
+	return ..()
+*/
 //checks if projectile 'P' from turf 'from' can hit whatever is behind the table. Returns 1 if it can, 0 if bullet stops.
 /obj/structure/table/proc/check_cover(obj/item/projectile/P, turf/from)
 	var/turf/cover = flipped ? get_turf(src) : get_step(loc, get_dir(from, loc))
@@ -332,6 +339,8 @@
 	return 1
 
 /obj/structure/table/CheckExit(atom/movable/O as mob|obj, target as turf)
+	if(locate(/obj/structure/table, O.loc))
+		return 1
 	if(istype(O) && O.checkpass(PASSTABLE))
 		return 1
 	if (flipped)
@@ -641,15 +650,30 @@
 		user.say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!" ))
 		destroy()
 
+	if(usr.a_intent == "disarm" && get_dist(usr, src) <= 1 && !usr.buckled)
+		if(prob(60))
+			visible_message("<span class='notice'>[user] climbs on the [src].</span>")
+			usr.loc = src.loc
+			pass_flags |= PASSTABLE
+//			spawn(60)
+
+		else
+			sleep(10)
+			visible_message("<span class='warning'>[user] slipped off the edge of the [src].</span>")
+			usr.weakened += 3
+
+
 /obj/structure/rack/attack_paw(mob/user)
 	if(HULK in user.mutations)
 		user.say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!" ))
 		visible_message("<span class='danger'>[user] smashes [src] apart!</span>")
 		destroy()
 
+
 /obj/structure/rack/attack_alien(mob/user)
 	visible_message("<span class='danger'>[user] slices [src] apart!</span>")
 	destroy()
+
 
 /obj/structure/rack/attack_animal(mob/living/simple_animal/user)
 	if(user.wall_smash)
